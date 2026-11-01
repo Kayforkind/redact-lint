@@ -62,9 +62,10 @@ async function pullRequestFiles(env) {
   const [owner, repo] = (env.GITHUB_REPOSITORY || '').split('/');
   const number = prNumber(env);
   if (!owner || !repo || !number) return [];
+  const api = (env.GITHUB_API_URL || 'https://api.github.com').replace(/\/$/, '');
   const files = [];
   for (let page = 1; page <= 30; page++) {
-    const url = `https://api.github.com/repos/${owner}/${repo}/pulls/${number}/files?per_page=100&page=${page}`;
+    const url = `${api}/repos/${owner}/${repo}/pulls/${number}/files?per_page=100&page=${page}`;
     const res = await fetch(url, {
       headers: {
         accept: 'application/vnd.github+json',

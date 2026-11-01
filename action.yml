@@ -18,7 +18,7 @@ inputs:
   version:
     description: redact-lint version to run.
     required: false
-    default: '0.2.0'
+    default: '0.2.1'
   min-coverage:
     description: Fraction of a text box a fill must cover to be reported, 0-1.
     required: false

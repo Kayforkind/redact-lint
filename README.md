@@ -166,7 +166,7 @@ document is safe". Pair it with a visual check of the exported page.
 
 ```bash
 npm install
-npm test                          # 22 tests: detector, fixtures, CLI, action
+npm test                          # 23 tests: detector, fixtures, CLI, action
 node scripts/make-fixtures.mjs    # writes leaky.pdf + clean.pdf to try it on
 ```
 

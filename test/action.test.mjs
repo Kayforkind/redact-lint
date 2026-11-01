@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
+import { createServer } from 'node:http';
 import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -70,6 +71,40 @@ test('glob mode finds nested PDFs and skips node_modules', async () => {
   const files = stdout.trim().split('\n');
   assert.ok(files.includes('docs/nested/a.pdf'), 'nested PDF should be found');
   assert.ok(!files.some((f) => f.includes('node_modules')), 'node_modules must be skipped');
+});
+
+test('pull request mode selects the PDFs the PR changed', async () => {
+  const cwd = await workdir();
+  const server = createServer((req, res) => {
+    const page = new URL(req.url, 'http://localhost').searchParams.get('page');
+    res.setHeader('content-type', 'application/json');
+    if (page !== '1') return res.end('[]');
+    res.end(JSON.stringify([
+      { filename: 'clean.pdf', status: 'modified' },
+      { filename: 'leaky.pdf', status: 'added' },
+      { filename: 'docs/removed.pdf', status: 'removed' },
+      { filename: 'README.md', status: 'modified' },
+    ]));
+  });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const { port } = server.address();
+  const eventFile = path.join(cwd, 'event.json');
+  await writeFile(eventFile, JSON.stringify({ pull_request: { number: 7 } }));
+  try {
+    const { stdout } = await sh(process.execPath, [SELECT], {
+      cwd,
+      env: {
+        INPUT_CHANGED_ONLY: 'true',
+        GITHUB_EVENT_PATH: eventFile,
+        GITHUB_REPOSITORY: 'o/r',
+        GITHUB_API_URL: `http://127.0.0.1:${port}`,
+        RL_TOKEN: 'test-token',
+      },
+    });
+    assert.deepEqual(stdout.trim().split('\n').sort(), ['clean.pdf', 'leaky.pdf']);
+  } finally {
+    server.close();
+  }
 });
 
 test('action fails the step on a leak and reports outputs', async () => {
