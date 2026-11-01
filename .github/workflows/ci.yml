@@ -58,3 +58,16 @@ jobs:
           npm init -y > /dev/null
           npm install "$GITHUB_WORKSPACE"/redact-lint-*.tgz --no-audit --no-fund
           ./node_modules/.bin/redact-lint --version
+
+      # The README tells people to run `npx redact-lint`. npx is a thin wrapper
+      # over npm exec, so this exercises the same bin resolution from a
+      # directory that looks like a user's: no package.json of its own.
+      - name: Documented command runs from a neutral directory
+        working-directory: ${{ runner.temp }}
+        run: |
+          set -euo pipefail
+          npm exec --yes --package="$GITHUB_WORKSPACE"/redact-lint-*.tgz -- redact-lint --version
+          node "$GITHUB_WORKSPACE/scripts/make-fixtures.mjs" "$RUNNER_TEMP/fixtures"
+          if npm exec --yes --package="$GITHUB_WORKSPACE"/redact-lint-*.tgz -- redact-lint "$RUNNER_TEMP/fixtures/leaky.pdf"; then
+            echo "expected a non-zero exit for the leaky fixture"; exit 1
+          fi
