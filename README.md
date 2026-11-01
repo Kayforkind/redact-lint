@@ -289,8 +289,9 @@ GitHub OIDC token for a short-lived credential, so there is no `NPM_TOKEN`
 secret to leak or rotate, and the tarball gets a signed provenance statement.
 It only needs a one-time trusted-publisher entry on npmjs.com (package
 Settings → Trusted Publisher → GitHub Actions → `Kayforkind/redact-lint`,
-workflow `release.yml`). After publishing it opens a GitHub Release with
-generated notes, so the changelog and the tags stay in one place.
+workflow `release.yml`). After publishing it opens a GitHub Release from the
+matching `CHANGELOG.md` section and advances the `v1` tag that the `uses:`
+examples above pin, so the changelog, the release and the alias stay in step.
 
 See [CHANGELOG.md](CHANGELOG.md) for what changed in each version and
 [CONTRIBUTING.md](CONTRIBUTING.md) for how to send a change.
