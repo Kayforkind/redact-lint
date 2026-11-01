@@ -1,6 +1,7 @@
 # redact-lint
 
 [![CI](https://github.com/Kayforkind/redact-lint/actions/workflows/ci.yml/badge.svg)](https://github.com/Kayforkind/redact-lint/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/redact-lint.svg)](https://www.npmjs.com/package/redact-lint)
 
 Catch fake redaction before the file leaves your machine.
 
