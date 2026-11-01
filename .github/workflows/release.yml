@@ -24,6 +24,12 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    env:
+      # The action's major tag is not the package's major version: the package
+      # is still 0.x while `uses: Kayforkind/redact-lint@v1` is what the README
+      # documents and what consumers pin. Deriving it from the version created
+      # a v0 tag nobody references.
+      ACTION_TAG: v1
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
@@ -93,11 +99,10 @@ jobs:
 
       # Action consumers pin `@v1`; without this the alias keeps serving the
       # action as it was on the first release, not as it is now.
-      - name: Move the major version tag
+      - name: Move the action's major tag
         if: github.ref_type == 'tag'
         run: |
           set -euo pipefail
-          VERSION="${GITHUB_REF_NAME#v}"
-          MAJOR="v${VERSION%%.*}"
-          git tag -f "$MAJOR" "$GITHUB_REF_NAME^{}"
-          git push -f origin "$MAJOR"
+          test -n "$ACTION_TAG"
+          git tag -f "$ACTION_TAG" "$GITHUB_REF_NAME^{}"
+          git push -f origin "$ACTION_TAG"
