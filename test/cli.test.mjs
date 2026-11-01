@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { mkdtemp, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -26,6 +26,13 @@ async function cli(args) {
     return { code: err.code, stdout: err.stdout ?? '', stderr: err.stderr ?? '' };
   }
 }
+
+test('--version matches package.json (no drift on a release bump)', async () => {
+  const pkg = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
+  const { code, stdout } = await cli(['--version']);
+  assert.equal(code, 0);
+  assert.equal(stdout.trim(), pkg.version);
+});
 
 test('exits 1 and reports the leak for a painted-over PDF', async () => {
   const file = await writeFixture(await paintedOver(), 'leaky.pdf');

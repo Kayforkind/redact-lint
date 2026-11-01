@@ -7,10 +7,13 @@
  *   redact-lint report.pdf --show-text     print the leaked text (local only)
  */
 import { readFile } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import path from 'node:path';
 import { analyzePdf } from './analyze.mjs';
 
-const VERSION = '0.1.0';
+// Single source of truth. A hardcoded copy drifts on the first release bump,
+// and --version is exactly what people quote in a bug report.
+const VERSION = createRequire(import.meta.url)('../package.json').version;
 
 const HELP = `redact-lint ${VERSION} — catch redaction that only paints over text
 
