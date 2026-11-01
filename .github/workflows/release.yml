@@ -8,7 +8,7 @@ name: Release
 #   npmjs.com -> redact-lint -> Settings -> Trusted Publisher -> GitHub Actions
 #   organization: Kayforkind   repository: redact-lint
 #   workflow: release.yml      environment: (leave blank)
-# Then: git tag v0.1.1 && git push origin v0.1.1
+# Then: git tag v0.3.0 && git push origin v0.3.0
 
 on:
   push:
@@ -18,7 +18,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write # GitHub Release after a successful publish
+  contents: write # GitHub Release and the moving major tag
   id-token: write # required for the OIDC exchange
 
 jobs:
@@ -51,7 +51,24 @@ jobs:
         run: npm publish --provenance --access public
 
       # Tags are cheap and easy to forget; a Release is what people actually
-      # read. Generated notes list the commits since the previous tag.
+      # read. Notes come from the CHANGELOG section for this version: generated
+      # notes compare against the moving `v1` tag and describe the wrong diff.
+      - name: Extract release notes
+        if: github.ref_type == 'tag'
+        run: |
+          set -euo pipefail
+          node -e '
+            const fs = require("node:fs");
+            const v = process.env.GITHUB_REF_NAME.replace(/^v/, "");
+            const text = fs.readFileSync("CHANGELOG.md", "utf8");
+            const start = text.indexOf("## [" + v + "]");
+            if (start === -1) process.exit(0);
+            const rest = text.slice(start);
+            const next = rest.indexOf("\n## [", 1);
+            process.stdout.write((next === -1 ? rest : rest.slice(0, next)).trim() + "\n");
+          ' > release-notes.md
+          echo "notes lines: $(wc -l < release-notes.md)"
+
       - name: GitHub Release
         if: github.ref_type == 'tag'
         env:
@@ -62,7 +79,25 @@ jobs:
             echo "release $GITHUB_REF_NAME already exists"
             exit 0
           fi
-          gh release create "$GITHUB_REF_NAME" \
-            --title "$GITHUB_REF_NAME" \
-            --generate-notes \
-            --verify-tag
+          if [ -s release-notes.md ]; then
+            gh release create "$GITHUB_REF_NAME" \
+              --title "$GITHUB_REF_NAME" \
+              --notes-file release-notes.md \
+              --verify-tag
+          else
+            gh release create "$GITHUB_REF_NAME" \
+              --title "$GITHUB_REF_NAME" \
+              --generate-notes \
+              --verify-tag
+          fi
+
+      # Action consumers pin `@v1`; without this the alias keeps serving the
+      # action as it was on the first release, not as it is now.
+      - name: Move the major version tag
+        if: github.ref_type == 'tag'
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          MAJOR="v${VERSION%%.*}"
+          git tag -f "$MAJOR" "$GITHUB_REF_NAME^{}"
+          git push -f origin "$MAJOR"
