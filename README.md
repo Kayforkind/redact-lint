@@ -38,7 +38,7 @@ page. Every year, published documents are found with names, addresses and
 account numbers still extractable under a box. `redact-lint` is a check you can
 run on every PDF your team publishes, in one second, with no upload.
 
-Longer write-up, including the CI setup: [docs/launch-post.md](docs/launch-post.md).
+Longer write-up, including the CI setup: [docs/launch-post.md](docs/launch-post.md). Where the project stands and what is missing: [docs/plan.md](docs/plan.md).
 
 ## Usage
 
