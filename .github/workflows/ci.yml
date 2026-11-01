@@ -66,8 +66,11 @@ jobs:
         working-directory: ${{ runner.temp }}
         run: |
           set -euo pipefail
-          npm exec --yes --package="$GITHUB_WORKSPACE"/redact-lint-*.tgz -- redact-lint --version
+          tarball="$(ls "$GITHUB_WORKSPACE"/redact-lint-*.tgz | head -1)"
+          echo "tarball=$tarball"
+          test -f "$tarball"
+          npm exec --yes --package="$tarball" -- redact-lint --version
           node "$GITHUB_WORKSPACE/scripts/make-fixtures.mjs" "$RUNNER_TEMP/fixtures"
-          if npm exec --yes --package="$GITHUB_WORKSPACE"/redact-lint-*.tgz -- redact-lint "$RUNNER_TEMP/fixtures/leaky.pdf"; then
+          if npm exec --yes --package="$tarball" -- redact-lint "$RUNNER_TEMP/fixtures/leaky.pdf"; then
             echo "expected a non-zero exit for the leaky fixture"; exit 1
           fi
