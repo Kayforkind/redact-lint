@@ -45,7 +45,15 @@ test('action.yml is a valid composite action wired to the scripts', async () => 
   const [step] = meta.runs.steps;
   assert.equal(step.shell, 'bash');
   assert.match(step.run, /GITHUB_ACTION_PATH/);
-  assert.equal(meta.inputs.version.default, JSON.parse(await readFile(path.join(ROOT, 'package.json'), 'utf8')).version);
+
+  // Three places name the scanner version and must not drift apart: the
+  // package, the action's default, and the table readers copy from.
+  const version = JSON.parse(await readFile(path.join(ROOT, 'package.json'), 'utf8')).version;
+  assert.equal(meta.inputs.version.default, version);
+  const readme = await readFile(path.join(ROOT, 'README.md'), 'utf8');
+  const row = readme.match(/\| `version` \| `([^`]+)` \|/);
+  assert.ok(row, 'README should document the version input');
+  assert.equal(row[1], version);
 });
 
 test('selects only existing PDFs from an explicit list', async () => {

@@ -43,14 +43,7 @@ jobs:
       - run: npm ci
       - name: Demo fixture (dispatch only)
         if: inputs.demo
-        run: |
-          node -e "
-            import('./test/fixtures.mjs').then(async (f) => {
-              const { mkdir, writeFile } = await import('node:fs/promises');
-              await mkdir('demo', { recursive: true });
-              await writeFile('demo/leaky.pdf', await f.paintedOver());
-            });
-          "
+        run: node scripts/make-fixtures.mjs demo
       - name: Scan
         id: scan
         uses: ./

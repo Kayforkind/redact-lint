@@ -86,7 +86,7 @@ merge, require the check in **Settings → Branches → Require status checks**
 | --- | --- | --- |
 | `paths` | `**/*.pdf` | Comma-separated globs, used when not limited to the diff |
 | `changed-only` | `true` | Only scan PDFs the pull request changed |
-| `version` | `0.2.0` | redact-lint version to run |
+| `version` | `0.2.2` | redact-lint version to run |
 | `min-coverage` | `0.6` | How much of a text run a fill must cover |
 | `show-text` | `false` | Print covered text instead of masking it |
 | `fail-on` | `leak` | `never` reports without failing the job |
