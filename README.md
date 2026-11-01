@@ -59,14 +59,52 @@ npm install -D redact-lint
 | `1` | At least one text run sits under an opaque fill and is still in the file |
 | `2` | Usage error, or a file could not be read or parsed |
 
-### In CI
+## GitHub Action
+
+Fails a pull request when a changed PDF still hides text under a bar.
 
 ```yaml
-- name: No fake redactions
-  run: npx --yes redact-lint public/*.pdf
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  redaction:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Kayforkind/redact-lint@v1
 ```
 
-Run it in the pull request that adds the document, not after publication.
+The action lists the PDFs the pull request added or modified — through the API,
+so no `fetch-depth: 0` checkout is needed — scans them, writes a table to the
+job summary, and exits non-zero when a leak is found. To actually block the
+merge, require the check in **Settings → Branches → Require status checks**
+(the job name, `redaction` above).
+
+| Input | Default | Meaning |
+| --- | --- | --- |
+| `paths` | `**/*.pdf` | Comma-separated globs, used when not limited to the diff |
+| `changed-only` | `true` | Only scan PDFs the pull request changed |
+| `version` | `0.2.0` | redact-lint version to run |
+| `min-coverage` | `0.6` | How much of a text run a fill must cover |
+| `show-text` | `false` | Print covered text instead of masking it |
+| `fail-on` | `leak` | `never` reports without failing the job |
+
+| Output | Meaning |
+| --- | --- |
+| `leaks` | Covered regions that still contain extractable text |
+| `files` | PDFs inspected |
+| `report` | Path to the JSON report |
+
+Scanning everything on a schedule, ignoring the diff:
+
+```yaml
+- uses: Kayforkind/redact-lint@v1
+  with:
+    changed-only: false
+    paths: 'public/**/*.pdf'
+```
 
 ### As a library
 
@@ -128,7 +166,7 @@ document is safe". Pair it with a visual check of the exported page.
 
 ```bash
 npm install
-npm test                          # 14 tests: detector, fixtures, CLI contract
+npm test                          # 22 tests: detector, fixtures, CLI, action
 node scripts/make-fixtures.mjs    # writes leaky.pdf + clean.pdf to try it on
 ```
 
@@ -137,6 +175,10 @@ every case is inspectable: a painted-over secret, the same leak on a rotated
 page, a whiteout, a genuinely redacted file, a clean document, a highlight
 panel, and a realistic three-page report with header bars and zebra rows that
 must stay silent.
+
+The action is tested the same way — file selection, glob handling, outputs,
+the job summary staying masked, and the exit code that blocks a merge — with
+`RL_CLI` pointing at the local scanner so the suite needs no network.
 
 ## Releasing
 

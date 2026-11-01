@@ -1,0 +1,63 @@
+name: redact-lint
+description: Fail when a changed PDF hides text under a redaction box instead of removing it.
+author: NavigatorsLab
+
+branding:
+  icon: shield
+  color: red
+
+inputs:
+  paths:
+    description: Comma-separated globs of PDFs to scan when not limited to the pull request diff.
+    required: false
+    default: '**/*.pdf'
+  changed-only:
+    description: Only scan PDFs added or modified by the pull request.
+    required: false
+    default: 'true'
+  version:
+    description: redact-lint version to run.
+    required: false
+    default: '0.2.0'
+  min-coverage:
+    description: Fraction of a text box a fill must cover to be reported, 0-1.
+    required: false
+    default: '0.6'
+  show-text:
+    description: Print covered text instead of masking it. Leave off in shared logs.
+    required: false
+    default: 'false'
+  fail-on:
+    description: 'leak fails the check on a finding; never reports without failing.'
+    required: false
+    default: 'leak'
+  github-token:
+    description: Token used to list the pull request's changed files.
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  leaks:
+    description: Number of covered regions that still contain extractable text.
+    value: ${{ steps.scan.outputs.leaks }}
+  files:
+    description: Number of PDFs inspected.
+    value: ${{ steps.scan.outputs.files }}
+  report:
+    description: Path to the JSON report.
+    value: ${{ steps.scan.outputs.report }}
+
+runs:
+  using: composite
+  steps:
+    - id: scan
+      shell: bash
+      env:
+        INPUT_PATHS: ${{ inputs.paths }}
+        INPUT_CHANGED_ONLY: ${{ inputs.changed-only }}
+        INPUT_VERSION: ${{ inputs.version }}
+        INPUT_MIN_COVERAGE: ${{ inputs.min-coverage }}
+        INPUT_SHOW_TEXT: ${{ inputs.show-text }}
+        INPUT_FAIL_ON: ${{ inputs.fail-on }}
+        RL_TOKEN: ${{ inputs.github-token }}
+      run: bash "$GITHUB_ACTION_PATH/scripts/run.sh"
