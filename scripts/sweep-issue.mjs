@@ -29,9 +29,10 @@ const files = report.files || [];
 const rows = [];
 for (const file of files) {
   for (const finding of file.findings || []) {
+    const cover = finding.fill.type === 'image' ? 'image' : finding.fill.color;
     for (const run of finding.covered) {
       rows.push(
-        `| \`${file.file}\` | ${finding.page} | ${finding.kind} | ${finding.fill.color} ${finding.fill.w}×${finding.fill.h}pt | \`${run.text}\` | ${Math.round(run.coverage * 100)}% |`,
+        `| \`${file.file}\` | ${finding.page} | ${finding.kind} | ${cover} ${finding.fill.w}×${finding.fill.h}pt | \`${run.text}\` | ${Math.round(run.coverage * 100)}% |`,
       );
     }
   }

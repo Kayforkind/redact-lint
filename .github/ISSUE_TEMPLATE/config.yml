@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/Kayforkind/redact-lint/security/advisories/new
+    about: Report a security vulnerability privately.
+  - name: A document that leaked in the wild
+    url: https://github.com/Kayforkind/redact-lint/security/advisories/new
+    about: Do not open an issue with the document or its contents. Use the private advisory form.

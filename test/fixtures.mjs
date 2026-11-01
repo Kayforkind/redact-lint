@@ -6,6 +6,7 @@
  * text bytes are still in the page content stream under the black box.
  */
 import { PDFDocument, StandardFonts, rgb, degrees } from 'pdf-lib';
+import PDFKit from 'pdfkit';
 
 const SECRET = 'SSN 123-45-6789';
 
@@ -64,6 +65,75 @@ export async function paintedOverRotated() {
   const doc = await PDFDocument.load(bytes);
   doc.getPage(0).setRotation(degrees(90));
   return doc.save();
+}
+
+// A 16×16 opaque PNG, used for the image-cover cases.
+const PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAFUlEQVR42mNkYPhfz0BkYBxVSF+FAAsyE/1s1s2zAAAAAElFTkSuQmCC',
+  'base64',
+);
+
+/** A bitmap pasted over live text: looks redacted, is not. */
+export async function imageCover() {
+  const { doc, page } = await basePage();
+  const image = await doc.embedPng(PNG);
+  page.drawImage(image, { x: 68, y: 653, width: 220, height: 22 });
+  return doc.save();
+}
+
+/** A logo drawn before the text it sits behind: must NOT be reported. */
+export async function imageBehindText() {
+  const doc = await PDFDocument.create();
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  const page = doc.addPage([612, 792]);
+  const image = await doc.embedPng(PNG);
+  page.drawImage(image, { x: 68, y: 653, width: 220, height: 22 });
+  page.drawText(SECRET, { x: 72, y: 660, size: 12, font, color: rgb(1, 1, 1) });
+  return doc.save();
+}
+
+/** A form field whose value is still in the file, independently of the page. */
+export async function formWithValue() {
+  const doc = await PDFDocument.create();
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  const page = doc.addPage([612, 792]);
+  page.drawText('Applicant record', { x: 72, y: 720, size: 14, font, color: rgb(0, 0, 0) });
+  const form = doc.getForm();
+  const field = form.createTextField('applicant');
+  field.addToPage(page, { x: 72, y: 660, width: 240, height: 20 });
+  field.setText('Jane Q. Public');
+  return doc.save();
+}
+
+/** A different producer (PDFKit), with the same painted-over text. */
+export async function pdfkitLeak() {
+  const doc = new PDFKit({ size: 'A4' });
+  const chunks = [];
+  await new Promise((resolve, reject) => {
+    doc.on('data', (chunk) => chunks.push(chunk));
+    doc.on('end', resolve);
+    doc.on('error', reject);
+    doc.fontSize(12).text('Name: Jane Q. Public', 72, 80);
+    doc.fontSize(12).text(SECRET, 72, 110);
+    doc.rect(70, 104, 200, 22).fill('#000000');
+    doc.end();
+  });
+  return new Uint8Array(Buffer.concat(chunks));
+}
+
+/** Encrypted with a user password; text and cover both present. */
+export async function encrypted(password = 'secret') {
+  const doc = new PDFKit({ size: 'A4', userPassword: password, ownerPassword: 'owner-secret' });
+  const chunks = [];
+  await new Promise((resolve, reject) => {
+    doc.on('data', (chunk) => chunks.push(chunk));
+    doc.on('end', resolve);
+    doc.on('error', reject);
+    doc.fontSize(12).text(SECRET, 72, 110);
+    doc.rect(70, 104, 200, 22).fill('#000000');
+    doc.end();
+  });
+  return new Uint8Array(Buffer.concat(chunks));
 }
 
 /** Full-page white background under body text: must NOT be reported. */

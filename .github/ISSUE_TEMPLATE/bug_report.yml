@@ -1,0 +1,85 @@
+name: Bug report
+description: Something scanned wrong, crashed, or gave a confusing result.
+title: '[bug] '
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Please do not attach a real document here — a
+        public issue is not the place for a confidential PDF, and the text
+        under a cover is exactly what the tool is meant to protect.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did redact-lint report or do, and what did you expect instead?
+      placeholder: 'It exited 0 on a file where the leak is visible under the bar in Acrobat.'
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: |
+        The command you ran, and a synthetic PDF that shows the problem if you
+        can. `test/fixtures.mjs` has the builders this project uses, or redraw
+        the situation with pdf-lib and attach that. Screenshots of a page are
+        fine; extracted text from a real document is not.
+      placeholder: |
+        npx redact-lint report.pdf
+        Node 22.5.1, pdf-lib 1.17.1 fixture attached
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `npx redact-lint --version`.
+      placeholder: 0.3.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: How were you running it?
+      options:
+        - CLI (npx or installed)
+        - GitHub Action
+        - Library import
+        - pre-commit hook
+        - Other CI (GitLab, Buildkite, Jenkins, Makefile)
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: OS and Node version
+      placeholder: 'macOS 15.1, Node 22.11.0'
+    validations:
+      required: true
+
+  - type: textarea
+    id: output
+    attributes:
+      label: Output
+      description: |
+        The full command output if it is short. The tool masks covered text by
+        default; keep it masked, and do not re-run with `--show-text` to paste
+        the result here.
+      render: text
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Confidentiality
+      options:
+        - label: I have not attached a real confidential PDF, pasted covered text, or included any personal data.
+          required: true

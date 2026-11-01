@@ -45,11 +45,18 @@ if [ "$count" -eq 0 ]; then
 fi
 
 echo "redact-lint: scanning $count PDF(s)"
-mapfile -t list < "$files"
+# Read without mapfile: macOS ships bash 3.2, which has no mapfile.
+list=()
+while IFS= read -r line; do
+  [ -n "$line" ] && list+=("$line")
+done < "$files"
 
 args=(--json --min-coverage "$coverage")
 if [ "${INPUT_SHOW_TEXT:-false}" = "true" ]; then
   args+=(--show-text)
+fi
+if [ -n "${INPUT_IGNORE_FILE:-}" ]; then
+  args+=(--ignore-file "$INPUT_IGNORE_FILE")
 fi
 
 # Install into a private prefix and call the entry point with node. `npx`

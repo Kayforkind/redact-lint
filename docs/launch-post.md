@@ -91,8 +91,9 @@ Covered text is masked by default, because this output ends up in build logs and
 pasted into tickets. `--show-text` prints it for local review.
 
 Exit codes are the interface: `0` clean, `1` a covered run is still in the
-file, `2` the file could not be read. `--json` gives you the same findings as
-data.
+file, `2` the file could not be read, `3` it is encrypted and needs a password
+(`--password`). `--json` gives you the same findings as data, and `--sarif`
+gives them to code scanning.
 
 ## Wiring it into CI
 
@@ -131,6 +132,25 @@ Scanning everything instead of the diff:
     paths: 'public/**/*.pdf'
 ```
 
+If a finding is legitimate and will never be fixed — an old archive you keep
+for reference, a divider page — waive it with a reason instead of switching the
+check off:
+
+```
+# .redactlintignore
+public/archive/*.pdf   # withdrawn document, kept for the record
+```
+
+A rule without a reason is an error. The report still says what was waived, so
+the decision stays visible in the log.
+
+Should the findings live next to your other code-scanning alerts, emit SARIF
+instead of a table:
+
+```bash
+npx redact-lint --sarif $(find public -name '*.pdf') > redact.sarif
+```
+
 ### Any other CI
 
 ```bash
@@ -165,18 +185,22 @@ while it persists, and closes it on the first clean run.
 A security tool that overstates itself is worse than none, so the limits are
 part of the product:
 
-- **Image covers.** A screenshot or a scanned page placed over text is not a
-  fill. The tool does not infer what an image hides.
 - **Invisible text** that was never covered — drawn in the background colour, or
   clipped away. That is a different bug with a different check.
-- **Text in annotations, form fields, attachments or metadata.** Only the page
-  content stream is inspected.
-- **Encrypted PDFs.** They are not opened.
+- **Notes outside the page content stream.** `--annotations` lists annotation
+  and form-field text, but reports it as notes rather than leaks: whether the
+  value leaks depends on the reader and the export.
 - **Flattened pages** where a bad redaction was rasterised into the page image:
   nothing is extractable, so nothing is flagged, even if the pixels still show
   the content.
+- **Clipping, blend modes and transparency groups** are approximated; the tool
+  assumes an opaque cover.
 - **Fonts without a Unicode mapping** can produce empty text runs, and there is
   nothing to compare.
+
+Bitmap covers *are* reported (`image-cover`), with one deliberate limit: an
+image covering most of the page is treated as a scan or a background, not a
+redaction.
 
 A clean run means "no text found under a later-painted fill". It does not mean
 "this document is safe". Pair it with a visual check of the exported page.

@@ -18,7 +18,7 @@ inputs:
   version:
     description: redact-lint version to run.
     required: false
-    default: '0.2.2'
+    default: '0.3.0'
   min-coverage:
     description: Fraction of a text box a fill must cover to be reported, 0-1.
     required: false
@@ -31,6 +31,10 @@ inputs:
     description: 'leak fails the check on a finding; never reports without failing.'
     required: false
     default: 'leak'
+  ignore-file:
+    description: Waiver file, relative to the repository root (default .redactlintignore).
+    required: false
+    default: ''
   github-token:
     description: Token used to list the pull request's changed files.
     required: false
@@ -59,5 +63,6 @@ runs:
         INPUT_MIN_COVERAGE: ${{ inputs.min-coverage }}
         INPUT_SHOW_TEXT: ${{ inputs.show-text }}
         INPUT_FAIL_ON: ${{ inputs.fail-on }}
+        INPUT_IGNORE_FILE: ${{ inputs.ignore-file }}
         RL_TOKEN: ${{ inputs.github-token }}
       run: bash "$GITHUB_ACTION_PATH/scripts/run.sh"

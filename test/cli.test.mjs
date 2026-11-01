@@ -6,7 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import test from 'node:test';
-import { paintedOver, trulyRedacted } from './fixtures.mjs';
+import { paintedOver, trulyRedacted, encrypted, formWithValue } from './fixtures.mjs';
 
 const run = promisify(execFile);
 const CLI = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'src', 'cli.mjs');
@@ -63,6 +63,29 @@ test('exits 0 for a properly redacted PDF', async () => {
   const { code, stdout } = await cli([file]);
   assert.equal(code, 0);
   assert.match(stdout, /OK/);
+});
+
+test('exits 3 for an encrypted PDF and names the flag', async () => {
+  const file = await writeFixture(await encrypted(), 'locked.pdf');
+  const { code, stderr } = await cli([file]);
+  assert.equal(code, 3);
+  assert.match(stderr, /encrypted/i);
+  assert.match(stderr, /--password/);
+});
+
+test('opens an encrypted PDF with --password', async () => {
+  const file = await writeFixture(await encrypted('secret'), 'locked.pdf');
+  const { code, stdout } = await cli([file, '--password', 'secret']);
+  assert.equal(code, 1);
+  assert.match(stdout, /LEAK/);
+});
+
+test('--annotations lists form values, still masked by default', async () => {
+  const file = await writeFixture(await formWithValue(), 'form.pdf');
+  const { code, stdout } = await cli([file, '--annotations']);
+  assert.equal(code, 0);
+  assert.match(stdout, /note/);
+  assert.ok(!stdout.includes('Jane Q. Public'), 'notes must be masked by default');
 });
 
 test('exits 2 when a file cannot be read', async () => {

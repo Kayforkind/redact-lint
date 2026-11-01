@@ -26,11 +26,12 @@ for (const file of report.files || []) {
   for (const f of findings) {
     if (shown >= MAX_LINES) continue;
     shown++;
-    lines.push(`  page ${f.page}  ${f.kind}  ${f.fill.color} ${f.fill.w}×${f.fill.h}pt`);
+    const cover = f.fill.type === 'image' ? 'image' : f.fill.color;
+    lines.push(`  page ${f.page}  ${f.kind}  ${cover} ${f.fill.w}×${f.fill.h}pt`);
     for (const run of f.covered) {
       lines.push(`    "${run.text}"  still extractable, ${Math.round(run.coverage * 100)}% covered`);
       rows.push(
-        `| \`${file.file}\` | ${f.page} | ${f.kind} | ${f.fill.color} ${f.fill.w}×${f.fill.h}pt | \`${run.text}\` | ${Math.round(run.coverage * 100)}% |`,
+        `| \`${file.file}\` | ${f.page} | ${f.kind} | ${cover} ${f.fill.w}×${f.fill.h}pt | \`${run.text}\` | ${Math.round(run.coverage * 100)}% |`,
       );
     }
   }

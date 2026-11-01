@@ -1,0 +1,59 @@
+name: Feature request
+description: A leak class, workflow or integration that redact-lint should handle.
+title: '[feature] '
+labels: ['enhancement']
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: |
+        Describe the situation, not the implementation. What kind of document,
+        what goes wrong today, and what does the workaround cost you? A sample
+        of the failure (synthetic, not confidential) is worth more than a
+        proposed API.
+      placeholder: 'Our board packs come out of LibreOffice, and the covers are grouped in a Form XObject that the detector never sees.'
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed
+    attributes:
+      label: Proposed behaviour
+      description: What should redact-lint report or return in that case?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: What does it touch?
+      options:
+        - Detector — a new cover type or a missed leak
+        - Detector — a false positive
+        - CLI output or exit codes
+        - GitHub Action
+        - Waivers or configuration
+        - Library API or types
+        - Documentation
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Including "do nothing" — sometimes the honest answer is that this is out of scope for a painted-order check.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: contribution
+    attributes:
+      label: Would you like to work on it?
+      options:
+        - 'Yes, with a pointer to where to start'
+        - 'Maybe, if the shape is agreed first'
+        - 'No — reporting only'
+    validations:
+      required: false

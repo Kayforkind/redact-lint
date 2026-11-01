@@ -26,6 +26,8 @@ jobs:
         run: npm audit --omit=dev
       - name: Tests
         run: npm test
+      - name: Type declarations
+        run: npm run typecheck
       - name: CLI smoke test
         run: |
           node src/cli.mjs --version
@@ -38,6 +40,40 @@ jobs:
           if node src/cli.mjs leaky.pdf; then
             echo "expected a non-zero exit for the leaky fixture"; exit 1
           fi
+
+  # Accuracy floors and the published performance budget. Separate from the
+  # version matrix because these are product promises, not portability: one
+  # clear red build is easier to read than three identical failures.
+  bench:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Detection floors (recall, false positives)
+        run: npm run bench:check
+      - name: Performance budget
+        run: npm run perf:check
+
+  # The action and the CLI both run shell, and macOS still ships bash 3.2. A
+  # green Linux build says nothing about either.
+  os:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
 
   # What ships has to run on Linux: the file mode of the bin, the bin link npm
   # creates, and the shebang are all invisible to a Windows checkout.

@@ -1,0 +1,7 @@
+- id: redact-lint
+  name: redact-lint (no painted-over text)
+  description: Fail when a PDF hides text under a cover instead of removing it.
+  entry: npx --yes redact-lint
+  language: system
+  files: \.pdf$
+  pass_filenames: true

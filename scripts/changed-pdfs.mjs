@@ -13,7 +13,7 @@
  * fail because the scanner cannot open it.
  */
 import { readFileSync, statSync } from 'node:fs';
-import { globToRegExp, walk } from './glob.mjs';
+import { globToRegExp, walk } from '../src/glob.mjs';
 
 const env = process.env;
 const out = [];
