@@ -52,13 +52,22 @@ if [ "${INPUT_SHOW_TEXT:-false}" = "true" ]; then
   args+=(--show-text)
 fi
 
+# Install into a private prefix and call the entry point with node. `npx`
+# depends on a bin symlink and PATH, which differs across runners and npm
+# versions; this path is the same everywhere.
+#
 # RL_CLI points at a local checkout of src/cli.mjs; used by this repo's own
 # tests so they never depend on the network.
 status=0
 if [ -n "${RL_CLI:-}" ]; then
   node "$RL_CLI" "${args[@]}" "${list[@]}" > "$report" || status=$?
 else
-  npx --yes "redact-lint@$version" "${args[@]}" "${list[@]}" > "$report" || status=$?
+  prefix="$work/redact-lint-pkg"
+  if ! npm install --prefix "$prefix" --no-audit --no-fund --loglevel=error "redact-lint@$version" >/dev/null 2>&1; then
+    echo "::error::could not install redact-lint@$version"
+    exit 2
+  fi
+  node "$prefix/node_modules/redact-lint/src/cli.mjs" "${args[@]}" "${list[@]}" > "$report" || status=$?
 fi
 
 if [ ! -s "$report" ]; then
