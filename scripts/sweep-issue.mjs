@@ -66,8 +66,9 @@ async function main() {
 function leakBody() {
   const scanned = files.length;
   const truncated = rows.length > MAX_ROWS;
+  const one = leaks === 1;
   const lines = [
-    `**${leaks}** covered region${leaks === 1 ? '' : 's'} across ${scanned} PDF${scanned === 1 ? '' : 's'} still contain extractable text.`,
+    `**${leaks}** covered region${one ? '' : 's'} across ${scanned} PDF${scanned === 1 ? '' : 's'} still ${one ? 'contains' : 'contain'} extractable text.`,
     '',
     'A rectangle only redacts if the text underneath was removed. These runs are covered but still in the file:',
     '',

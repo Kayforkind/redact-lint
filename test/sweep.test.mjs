@@ -74,7 +74,7 @@ test('opens one issue when a leak is found and none is open', async () => {
     const created = calls.find((c) => c.method === 'POST' && c.path.endsWith('/issues'));
     assert.ok(created, 'expected an issue to be created');
     assert.equal(created.body.title, TITLE);
-    assert.match(created.body.body, /1\*\* covered region/);
+    assert.match(created.body.body, /1\*\* covered region across 1 PDF still contains/);
     assert.match(created.body.body, /paint-over/);
     assert.ok(!created.body.body.includes('123-45-6789'), 'issue body must stay masked');
     assert.match(created.body.body, /Sweep log: https:\/\/example\.test\/run\/1/);
