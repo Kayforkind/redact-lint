@@ -1,0 +1,73 @@
+name: Leak sweep
+
+# Weekly check of every published PDF, not just the ones a pull request touched.
+# The failure mode this guards against is a document that was already published
+# before anybody started running redact-lint on PRs.
+#
+# It keeps ONE issue in sync: opened when a scan finds covered text that is
+# still extractable, updated in place while it persists, closed on the first
+# clean run. A leak that survives a month therefore produces a month-old issue
+# with fresh evidence, not four duplicates.
+
+on:
+  schedule:
+    - cron: '0 6 * * 1' # Mondays 06:00 UTC
+  workflow_dispatch:
+    inputs:
+      paths:
+        description: Comma-separated globs of PDFs to scan
+        required: false
+        default: '**/*.pdf'
+      demo:
+        description: Generate a painted-over fixture first, to exercise the issue flow
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: leak-sweep
+  cancel-in-progress: false
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Demo fixture (dispatch only)
+        if: inputs.demo
+        run: |
+          node -e "
+            import('./test/fixtures.mjs').then(async (f) => {
+              const { mkdir, writeFile } = await import('node:fs/promises');
+              await mkdir('demo', { recursive: true });
+              await writeFile('demo/leaky.pdf', await f.paintedOver());
+            });
+          "
+      - name: Scan
+        id: scan
+        uses: ./
+        continue-on-error: true
+        with:
+          changed-only: false
+          paths: ${{ inputs.paths || '**/*.pdf' }}
+      - name: Open, update or close the sweep issue
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPORT: ${{ steps.scan.outputs.report }}
+          REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: node scripts/sweep-issue.mjs
+      - name: Fail when the scan found leaks or could not run
+        if: steps.scan.outputs.leaks != '0' || steps.scan.outcome == 'failure'
+        run: |
+          echo "::error::sweep reported ${{ steps.scan.outputs.leaks || 'unknown' }} leak(s); see the issue for details"
+          exit 1

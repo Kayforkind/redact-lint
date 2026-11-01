@@ -97,6 +97,23 @@ merge, require the check in **Settings → Branches → Require status checks**
 | `files` | PDFs inspected |
 | `report` | Path to the JSON report |
 
+## Scheduled sweep
+
+`.github/workflows/sweep.yml` runs every Monday at 06:00 UTC over **every** PDF
+in the repository, not just the ones a pull request touched — the documents
+that were published before anyone started running this on PRs.
+
+It keeps one issue in sync instead of filing a new one each week:
+
+| Scan result | Issue |
+| --- | --- |
+| covered text still extractable | opened, or updated in place |
+| clean | closed with a note |
+
+Run it by hand from **Actions → Leak sweep**. Tick `demo` to generate a
+painted-over fixture first, which exercises the whole path without needing a
+real leak in the repo; leave it unticked to scan what is actually there.
+
 Scanning everything on a schedule, ignoring the diff:
 
 ```yaml
@@ -166,7 +183,7 @@ document is safe". Pair it with a visual check of the exported page.
 
 ```bash
 npm install
-npm test                          # 23 tests: detector, fixtures, CLI, action
+npm test                          # 28 tests: detector, fixtures, CLI, action, sweep
 node scripts/make-fixtures.mjs    # writes leaky.pdf + clean.pdf to try it on
 ```
 
