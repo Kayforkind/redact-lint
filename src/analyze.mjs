@@ -43,7 +43,6 @@ const DEFAULTS = {
 
 const FILL_OPS = new Set([OPS.fill, OPS.eoFill]);
 const CLOSING_FILL_OPS = new Set([OPS.fillStroke, OPS.eoFillStroke, OPS.closeFillStroke]);
-const TEXT_OPS = new Set([OPS.showText, OPS.showSpacedText]);
 const IMAGE_OPS = new Set([
   OPS.paintImageXObject,
   OPS.paintImageMaskXObject,
@@ -113,20 +112,67 @@ function overlapArea(a, b) {
   return x * y;
 }
 
-/** Text runs on one page, with the operator-list position each was painted at. */
-function textRuns(content, viewport, ops, fnArray) {
-  const showAt = [];
+/**
+ * Every non-whitespace character drawn by a text operator, tagged with the
+ * operator index that drew it.
+ *
+ * Pairing runs with operators by ordinal looked obvious and was wrong. Word
+ * emits a `showText` for each space in a table cell, Chromium splits one run
+ * across several operators, and pdfjs drops some of those items — so the
+ * ordinal drifts by a few operators and a background painted *before* its text
+ * starts to look like a cover painted after the text above it. Drift is not
+ * cosmetic here: it is a false positive with a citation.
+ *
+ * Characters are compared instead. Both sides have the same glyphs in the same
+ * order; only their grouping into operators and items differs, and whitespace
+ * is the one thing that differs freely (pdfjs inserts spaces between cell
+ * items that the content stream never drew).
+ */
+function textOperatorChars(fnArray, argsArray) {
+  const chars = [];
+  const add = (glyphs, opIndex) => {
+    for (const g of glyphs) {
+      const unicode = typeof g === 'string' ? g : g?.unicode;
+      if (!unicode) continue;
+      for (const ch of unicode) if (!/\s/.test(ch)) chars.push({ ch, opIndex });
+    }
+  };
+
   for (let i = 0; i < fnArray.length; i++) {
-    if (TEXT_OPS.has(fnArray[i])) showAt.push(i);
+    const fn = fnArray[i];
+    if (fn === OPS.showText) add(argsArray[i]?.[0] ?? [], i);
+    else if (fn === OPS.showSpacedText) {
+      for (const part of argsArray[i]?.[0] ?? []) {
+        if (typeof part === 'string') add([part], i);
+        else add(part ?? [], i);
+      }
+    }
   }
+  return chars;
+}
+
+/** Text runs on one page, with the operator-list position each was painted at. */
+function textRuns(content, viewport, fnArray, argsArray) {
+  const chars = textOperatorChars(fnArray, argsArray);
+  const flat = chars.map((c) => c.ch).join('');
+  let cursor = 0;
   const runs = [];
+
   for (const item of content.items) {
-    if (!item.str || !item.str.trim()) continue;
-    runs.push({
-      text: item.str,
-      box: textBox(viewport, item),
-      opIndex: showAt[runs.length],
-    });
+    const text = item.str;
+    if (!text || !text.trim()) continue;
+    const target = text.replace(/\s+/g, '');
+    if (!target) continue;
+
+    // Forward first, then anywhere: a font with a poor Unicode map can change
+    // a character, and an item that cannot be placed at all must not inherit
+    // the previous run's paint position.
+    let at = flat.indexOf(target, cursor);
+    if (at === -1) at = flat.indexOf(target);
+    const opIndex = at === -1 ? chars[Math.min(cursor, chars.length - 1)]?.opIndex ?? null : chars[at].opIndex;
+    if (at !== -1) cursor = at + target.length;
+
+    runs.push({ text, box: textBox(viewport, item), opIndex });
   }
   return runs;
 }
@@ -257,7 +303,7 @@ export async function analyzePdf(bytes, options = {}) {
     const page = await doc.getPage(pageNo);
     const viewport = page.getViewport({ scale: 1 });
     const [content, operatorList] = await Promise.all([page.getTextContent(), page.getOperatorList()]);
-    const runs = textRuns(content, viewport, operatorList, operatorList.fnArray);
+    const runs = textRuns(content, viewport, operatorList.fnArray, operatorList.argsArray);
     const painted = covers(operatorList.fnArray, operatorList.argsArray, viewport);
     textRunCount += runs.length;
 

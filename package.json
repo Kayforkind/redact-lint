@@ -1,6 +1,6 @@
 {
   "name": "redact-lint",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Catch fake redaction in PDFs before they ship.",
   "type": "module",
   "bin": {

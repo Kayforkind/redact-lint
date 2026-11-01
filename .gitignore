@@ -1,5 +1,8 @@
 node_modules/
+# Generated fixtures stay out of git; the real-producer corpus is the exception
+# because CI scores those exact bytes without installing Chrome or Word.
 *.pdf
+!bench/real/pdfs/*.pdf
 .npmrc
 .npm-login.log
 .npm-token

@@ -61,9 +61,19 @@ the file distinguishes them.
 
 `page.getTextContent()` returns items with `str`, `transform`, `width`,
 `height`, and no operator position. To recover painting order, `textRuns()`
-first collects the indexes of every text-showing operator (`OPS.showText`,
-`OPS.showSpacedText`) in the operator list, then pairs them with the content
-items in order. Each run records its `opIndex`.
+collects every non-whitespace character drawn by a text-showing operator
+(`OPS.showText`, `OPS.showSpacedText`), in order, each tagged with the index of
+the operator that drew it. Each content item is then located in that character
+stream and inherits the operator index of its first character.
+
+Pairing runs to operators by ordinal is the obvious implementation and it is
+wrong: Word emits a separate operator for every space in a table cell,
+Chromium splits one line across several operators, and pdfjs drops some of
+those items. The ordinal drifts, a background painted before its text starts to
+look like a cover painted after the previous line, and the tool reports a leak
+in a document that has none. Comparing characters is stable across those
+differences because the glyph order is the same on both sides; only the
+grouping and the whitespace differ.
 
 The box comes from `textBox()`. It transforms the item's text matrix by the
 viewport and then builds a quadrilateral from the matrix's own axes:
@@ -178,10 +188,11 @@ document.
   still show the content.
 - **Fonts without a Unicode mapping.** Such runs yield empty or garbage text
   and can be missed. The check has nothing to compare.
-- **Run-to-operator pairing.** Order is recovered by counting text-showing
-  operators and pairing them positionally with content items. Unusual content
-  streams — text inside form XObjects, marked-content sections that pdfjs
-  groups differently — can misalign the two lists.
+- **Run-to-operator pairing.** Order is recovered by matching characters, not
+  by counting operators, so whitespace-only operators and split items no longer
+  shift it. A font whose Unicode mapping changes characters can still defeat the
+  forward search; such an item keeps the paint position of the current cursor
+  rather than being dropped, which is conservative but not exact.
 - **Bounding boxes, not glyph outlines.** Coverage is box overlap. A box that
   is mostly whitespace is easier to "cover" than a dense line, and a cover
   rotated relative to the text is measured by its axis-aligned box.

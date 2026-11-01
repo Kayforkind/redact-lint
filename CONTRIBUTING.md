@@ -39,14 +39,17 @@ readable code rather than an opaque binary:
    in a comment what could have made it fire
 
 If a new fixture represents a real producer (Word, LibreOffice, LaTeX, Acrobat),
-say which, and add it to `bench/corpus.mjs` with its ground truth so the
-accuracy table covers it.
+say which. Prefer committing the exported PDF to `bench/real/pdfs` with an
+entry in `bench/real/manifest.json`, so CI scores the bytes rather than a
+re-implementation of them; `bench/real/README.md` has the steps.
 
 ## Changing the detector
 
 - Any change to the rules must move `npm run bench:check`, or the pull request
   must explain why the numbers stay put. "It still passes" is not enough when
-  the change was supposed to catch something.
+  the change was supposed to catch something. The floors are 99% painted-cover
+  recall, 99% image-cover recall and zero false-positive documents across the
+  synthetic and real-producer corpora.
 - Add the negative case as well as the positive one. Most of the detector's
   value is in staying quiet on zebra rows, header bars and page backgrounds.
 - Keep the documented thresholds meaningful: a cover must be painted after the

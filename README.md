@@ -124,7 +124,7 @@ merge, require the check in **Settings → Branches → Require status checks**
 | --- | --- | --- |
 | `paths` | `**/*.pdf` | Comma-separated globs, used when not limited to the diff |
 | `changed-only` | `true` | Only scan PDFs the pull request changed |
-| `version` | `0.3.0` | redact-lint version to run |
+| `version` | `0.3.1` | redact-lint version to run |
 | `min-coverage` | `0.6` | How much of a text run a cover must span |
 | `show-text` | `false` | Print covered text instead of masking it |
 | `fail-on` | `leak` | `never` reports without failing the job |
@@ -143,7 +143,7 @@ For code scanning, upload the SARIF instead of (or as well as) failing the job:
   continue-on-error: true
   with:
     changed-only: false
-- run: npx --yes redact-lint@0.3.0 --sarif $(find public -name '*.pdf') > redact.sarif
+- run: npx --yes redact-lint@0.3.1 --sarif $(find public -name '*.pdf') > redact.sarif
 - uses: github/codeql-action/upload-sarif@v3
   with:
     sarif_file: redact.sarif
@@ -157,7 +157,7 @@ For code scanning, upload the SARIF instead of (or as well as) failing the job:
 ```yaml
 repos:
   - repo: https://github.com/Kayforkind/redact-lint
-    rev: v0.3.0
+    rev: v0.3.1
     hooks:
       - id: redact-lint
 ```
@@ -213,7 +213,10 @@ order, and PDF content streams are ordered.
    every opaque fill and image with its box and the operator position it was
    painted at.
 2. Read text runs with their boxes and the position of the operator that
-   painted them.
+   painted them. Runs are matched to operators by their characters, not by
+   counting operators: Word emits a separate operator for every space in a
+   table cell and Chromium splits one line across several, which makes an
+   ordinal comparison drift.
 3. Report a cover only when it is painted **after** the text, covers at least
    60% of a run's box, and is smaller than 60% of the page (so full-page sheets
    and scans are never treated as covers).
@@ -254,19 +257,26 @@ document is safe". Pair it with a visual check of the exported page.
 
 ```bash
 npm install
-npm test                          # 45 tests: detector, fixtures, CLI, action, sweep, waivers, SARIF
+npm test                          # 54 tests: detector, fixtures, CLI, action, sweep, waivers, SARIF, real producers
 npm run typecheck                 # declarations compile against a consumer sample
-npm run bench                     # 17 synthetic documents; 100% recall, 0 false positives
+npm run bench                     # 25 documents, 8 exported by Chrome, Word and ReportLab
 npm run bench:check               # same, failing when a floor is missed
 npm run perf:check                # 200 pages must stay under 20 s
 node scripts/make-fixtures.mjs    # writes leaky.pdf + clean.pdf to try it on
 ```
 
-Fixtures are generated with `pdf-lib` at test time (`test/fixtures.mjs`), so
+Most fixtures are generated with `pdf-lib` at test time (`test/fixtures.mjs`), so
 every case is inspectable: a painted-over secret, the same leak on a rotated
 page, a whiteout, a genuinely redacted file, a clean document, a highlight
 panel, a bitmap cover, and a realistic three-page report with header bars and
 zebra rows that must stay silent.
+
+Eight more PDFs are committed under `bench/real/pdfs`, exported by Chrome,
+Microsoft Word and ReportLab, with ground truth in `bench/real/manifest.json`.
+They exist because generated fixtures only prove the detector works on pdf-lib
+output; Word and Chromium each emit text and fills in their own order.
+`node bench/real/make.mjs` regenerates them where the software is installed and
+checks the result against the manifest.
 
 The action is tested the same way — file selection, glob handling, outputs,
 the job summary staying masked, and the exit code that blocks a merge — with

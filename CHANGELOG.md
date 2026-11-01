@@ -2,6 +2,16 @@
 
 Notable changes to `redact-lint`. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-11-01
+
+### Fixed
+
+- Text runs are matched to their drawing operators by their characters instead of by counting operators. Word emits a space-only operator for every space in a table cell and Chromium splits a line across several operators, so the ordinal drifted: a clean Word table with a shaded header produced four false positives, and the same drift could hide a real leak.
+
+### Added
+
+- Eight PDFs exported by Chrome 156, Microsoft Word 16 and ReportLab 5.0 are committed under `bench/real/`, with ground truth, a generator (`node bench/real/make.mjs`) and tests. `BENCHMARK.md` now reports recall per producer.
+
 ## [0.3.0] - 2026-11-01
 
 ### Added
@@ -61,6 +71,7 @@ Notable changes to `redact-lint`. Format follows [Keep a Changelog](https://keep
 
 - Initial release: paint-order detection for `paint-over`, `whiteout` and `opaque-cover`, human and `--json` output, and exit codes `0`, `1` and `2`.
 
+[0.3.1]: https://github.com/Kayforkind/redact-lint/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/Kayforkind/redact-lint/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/Kayforkind/redact-lint/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/Kayforkind/redact-lint/compare/v0.2.0...v0.2.1
