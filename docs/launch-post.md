@@ -133,10 +133,14 @@ Scanning everything instead of the diff:
 
 ### Any other CI
 
-```yaml
+```bash
 # GitLab, Buildkite, Jenkins, a Makefile
-npx --yes redact-lint public/**/*.pdf
+find public -name '*.pdf' -print0 | xargs -0 npx --yes redact-lint
 ```
+
+`find` rather than `public/**/*.pdf`, because whether `**` recurses depends on
+your shell's `globstar` setting — and a check that silently skips subdirectories
+is worse than no check.
 
 Non-zero exits fail the step. If you keep PDFs in a repository with a
 `pre-commit` or `pre-push` hook, the same line works there.
