@@ -1,0 +1,49 @@
+name: Release
+
+# Publishing uses npm trusted publishing: this workflow exchanges a GitHub OIDC
+# token for a short-lived npm credential, so no NPM_TOKEN secret exists and
+# there is nothing to rotate or leak.
+#
+# One-time setup, after the first manual release:
+#   npmjs.com -> redact-lint -> Settings -> Trusted Publisher -> GitHub Actions
+#   organization: Kayforkind   repository: redact-lint
+#   workflow: release.yml      environment: (leave blank)
+# Then: git tag v0.1.1 && git push origin v0.1.1
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # required for the OIDC exchange
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          # Trusted publishing needs npm 11.5.1+; Node 24 ships a newer npm.
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          cache: npm
+      - run: npm ci
+      - name: Version guard
+        if: github.ref_type == 'tag'
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG="$(node -p "require('./package.json').version")"
+          echo "tag=$TAG package=$PKG"
+          if [ "$TAG" != "$PKG" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match package.json $PKG"
+            exit 1
+          fi
+      - run: npm test
+      - name: Publish
+        # --provenance attaches a signed build statement tying the tarball to
+        # this commit and workflow.
+        run: npm publish --provenance --access public

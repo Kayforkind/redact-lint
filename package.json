@@ -1,0 +1,29 @@
+{
+  "name": "redact-lint",
+  "version": "0.1.0",
+  "description": "Catch fake redaction in PDFs before they ship.",
+  "type": "module",
+  "bin": { "redact-lint": "./src/cli.mjs" },
+  "exports": { ".": "./src/analyze.mjs" },
+  "files": ["src"],
+  "engines": { "node": ">=20" },
+  "keywords": ["pdf", "redaction", "security", "cli", "pii", "lint", "pdfjs", "leak"],
+  "author": "NavigatorsLab",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kayforkind/redact-lint.git"
+  },
+  "homepage": "https://github.com/Kayforkind/redact-lint#readme",
+  "bugs": { "url": "https://github.com/Kayforkind/redact-lint/issues" },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "prepublishOnly": "npm test"
+  },
+  "dependencies": {
+    "pdfjs-dist": "4.10.38"
+  },
+  "devDependencies": {
+    "pdf-lib": "1.17.1"
+  }
+}
