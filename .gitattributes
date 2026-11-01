@@ -1,0 +1,2 @@
+# Committed fixtures are binary: line-ending normalisation would corrupt xref offsets.
+*.pdf binary

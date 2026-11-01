@@ -6,3 +6,5 @@ node_modules/
 .npmrc
 .npm-login.log
 .npm-token
+__pycache__/
+*.pyc
