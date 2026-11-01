@@ -12,7 +12,9 @@ name: Release
 
 on:
   push:
-    tags: ['v*']
+    # Semver tags only: the moving major tag (`v1`) that action consumers pin to
+    # must never start a publish, and its version guard would fail the run.
+    tags: ['v*.*.*']
   workflow_dispatch:
 
 permissions:
