@@ -2,6 +2,13 @@
 
 Notable changes to `redact-lint`. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] - 2026-11-02
+
+### Fixed
+
+- The release workflow moves `v1`, the tag action consumers pin, instead of deriving a `v0` alias from the package's 0.x version. `uses: Kayforkind/redact-lint@v1` had been serving the action as it was at the first release.
+- The `bin` entry is written in the same form npm normalizes it to on publish, so the tarball and the repository no longer disagree.
+
 ## [0.3.1] - 2026-11-01
 
 ### Fixed
@@ -71,6 +78,7 @@ Notable changes to `redact-lint`. Format follows [Keep a Changelog](https://keep
 
 - Initial release: paint-order detection for `paint-over`, `whiteout` and `opaque-cover`, human and `--json` output, and exit codes `0`, `1` and `2`.
 
+[0.3.2]: https://github.com/Kayforkind/redact-lint/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/Kayforkind/redact-lint/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/Kayforkind/redact-lint/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/Kayforkind/redact-lint/compare/v0.2.1...v0.2.2
