@@ -124,7 +124,7 @@ merge, require the check in **Settings → Branches → Require status checks**
 | --- | --- | --- |
 | `paths` | `**/*.pdf` | Comma-separated globs, used when not limited to the diff |
 | `changed-only` | `true` | Only scan PDFs the pull request changed |
-| `version` | `0.3.1` | redact-lint version to run |
+| `version` | `0.3.2` | redact-lint version to run |
 | `min-coverage` | `0.6` | How much of a text run a cover must span |
 | `show-text` | `false` | Print covered text instead of masking it |
 | `fail-on` | `leak` | `never` reports without failing the job |
@@ -143,7 +143,7 @@ For code scanning, upload the SARIF instead of (or as well as) failing the job:
   continue-on-error: true
   with:
     changed-only: false
-- run: npx --yes redact-lint@0.3.1 --sarif $(find public -name '*.pdf') > redact.sarif
+- run: npx --yes redact-lint@0.3.2 --sarif $(find public -name '*.pdf') > redact.sarif
 - uses: github/codeql-action/upload-sarif@v3
   with:
     sarif_file: redact.sarif
@@ -157,7 +157,7 @@ For code scanning, upload the SARIF instead of (or as well as) failing the job:
 ```yaml
 repos:
   - repo: https://github.com/Kayforkind/redact-lint
-    rev: v0.3.1
+    rev: v0.3.2
     hooks:
       - id: redact-lint
 ```
